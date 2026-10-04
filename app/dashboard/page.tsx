@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { KPICard } from '@/components/dashboard/KPICard';
@@ -10,9 +10,10 @@ import { ProbableCausesChart } from '@/components/charts/ProbableCausesChart';
 import { ConsumptionChart } from '@/components/charts/ConsumptionChart';
 import { RiskBadge } from '@/components/dashboard/RiskBadge';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
-import { transformers } from '@/data/transformers';
+import { transformers as mockTransformers } from '@/data/transformers';
 import { alertsData } from '@/data/alerts';
-import { investigationCases } from '@/data/cases';
+import { investigationCases as mockCases } from '@/data/cases';
+import { fetchSummary, fetchConsumers, fetchDTs, BackendSummary, ConsumerScore, DTScore } from '@/lib/api';
 import {
   Users,
   AlertTriangle,
@@ -21,9 +22,58 @@ import {
   TrendingUp,
   Activity,
   ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const [summary, setSummary] = useState<BackendSummary | null>(null);
+  const [consumers, setConsumers] = useState<ConsumerScore[]>([]);
+  const [dts, setDts] = useState<DTScore[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('Connecting to Python backend...');
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [sumRes, consRes, dtRes] = await Promise.all([
+        fetchSummary().catch(() => null),
+        fetchConsumers(10).catch(() => []),
+        fetchDTs().catch(() => []),
+      ]);
+
+      if (sumRes) {
+        setSummary(sumRes);
+      }
+      if (consRes && consRes.length > 0) {
+        setConsumers(consRes);
+      }
+      if (dtRes && dtRes.length > 0) {
+        setDts(dtRes);
+      }
+      setLastUpdated(new Date().toLocaleTimeString());
+    } catch (err) {
+      console.error('Failed to load live backend data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Metric Computations (Backend live data with fallback to mock data)
+  const totalConsumers = summary?.consumers?.total ?? 0;
+  const highRiskConsumers = summary?.consumers?.flagged ?? (summary?.consumers?.risk_distribution?.['High'] ?? 12);
+  // const activeAlerts = (summary?.dts?.p1 ?? 0) + (summary?.dts?.p2 ?? 0) || 4;
+  const suspiciousDts = summary?.dts?.suspicious ?? 0;
+  const totalTransformers = summary?.dts?.total ?? mockTransformers.length;
+
+  // Calculate average loss from DTs if available
+  const avgLoss = dts.length > 0
+    ? (dts.reduce((acc, curr) => acc + (curr.dt_loss_ratio ?? 0), 0) / dts.length * 100).toFixed(1) + '%'
+    : 'NAN 6.8%';
+
   return (
     <DashboardLayout>
       {/* Page Header */}
@@ -33,13 +83,24 @@ export default function DashboardPage() {
             Grid Overview
           </h1>
           <p className="text-xs md:text-sm text-slate-500 mt-0.5">
-            Monitor feeder health, transformer performance and consumer anomalies.
+            Monitor feeder health, transformer performance and consumer anomalies dynamically from Python Backend.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start md:self-auto text-xs text-slate-600 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-2xs font-mono font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-600" />
-          <span>Last updated: <strong className="text-slate-900">10:42:18 AM</strong></span>
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs text-slate-700 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200 shadow-2xs font-medium cursor-pointer transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Sync Live Backend</span>
+          </button>
+
+          <div className="flex items-center gap-2 text-xs text-slate-600 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-2xs font-mono font-medium">
+            <span className={`w-2 h-2 rounded-full ${summary ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+            <span>Last updated: <strong className="text-slate-900">{lastUpdated}</strong></span>
+          </div>
         </div>
       </div>
 
@@ -47,10 +108,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <KPICard
           title="Total Consumers"
-          value="150"
-          subtitle="Monitored"
-          // trend="+3 this month"
-          // trendDirection="up"
+          value={String(totalConsumers)}
+          subtitle="Monitored in MongoDB"
           trendColor="success"
           icon={Users}
           iconBg="bg-sky-50 text-sky-700 border border-sky-200"
@@ -58,20 +117,20 @@ export default function DashboardPage() {
 
         <KPICard
           title="High Risk"
-          value="12"
-          subtitle="High-risk consumers"
-          trend="3 from yesterday"
-          trendDirection="up"
+          value={String(highRiskConsumers)}
+          subtitle="Flagged by Model"
+          // trend="Urgent audit"   
+          // trendDirection="up"  
           trendColor="danger"
           icon={AlertTriangle}
           iconBg="bg-rose-50 text-rose-700 border border-rose-200"
         />
 
         <KPICard
-          title="Active Alerts"
-          value="04"
+          title="Suspicious DTs"
+          value={String(suspiciousDts)}
           subtitle="Requires attention"
-          trend="2 critical"
+          trend="High DT suspicion"
           trendDirection="neutral"
           trendColor="warning"
           icon={Bell}
@@ -80,9 +139,9 @@ export default function DashboardPage() {
 
         <KPICard
           title="Transformers"
-          value="3"
-          subtitle="Monitored"
-          trend="All online"
+          value={String(totalTransformers)}
+          subtitle="Distribution units"
+          // trend="Online"
           trendDirection="neutral"
           trendColor="success"
           icon={Cpu}
@@ -91,9 +150,9 @@ export default function DashboardPage() {
 
         <KPICard
           title="Unexplained Loss"
-          value="6.8%"
-          subtitle="Estimated"
-          trend="↑ 1.4%"
+          value={avgLoss}
+          subtitle="Estimated loss"
+          trend="↑ Live calculation"
           trendDirection="up"
           trendColor="danger"
           icon={TrendingUp}
@@ -102,9 +161,9 @@ export default function DashboardPage() {
 
         <KPICard
           title="Network Health"
-          value="92%"
-          subtitle="Overall health"
-          trend="Good"
+          value={summary ? `${Math.round(((totalConsumers - highRiskConsumers) / (totalConsumers || 1)) * 100)}%` : '92%'}
+          subtitle="Overall score"
+          trend="Active"
           trendDirection="neutral"
           trendColor="success"
           icon={Activity}
@@ -113,7 +172,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Network Topology Visual Card */}
-      <NetworkOverview transformers={transformers} />
+      <NetworkOverview transformers={mockTransformers} />
 
       {/* Risk Overview (Two Column Section) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -151,42 +210,59 @@ export default function DashboardPage() {
               <table className="w-full text-left text-xs font-mono">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500 font-sans font-semibold uppercase text-[10px] tracking-wider">
-                    <th className="py-2.5 px-3">Transformer</th>
-                    <th className="py-2.5 px-3">Consumers</th>
-                    <th className="py-2.5 px-3">Input</th>
-                    <th className="py-2.5 px-3">Consumer Usage</th>
-                    <th className="py-2.5 px-3">Loss %</th>
-                    <th className="py-2.5 px-3">Risk Level</th>
+                    <th className="py-2.5 px-3">Transformer ID</th>
+                    <th className="py-2.5 px-3">Total / Flagged</th>
+                    <th className="py-2.5 px-3">Suspicion Index</th>
+                    <th className="py-2.5 px-3">Loss Ratio</th>
+                    <th className="py-2.5 px-3">Priority</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {transformers.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="hover:bg-slate-50 transition-colors cursor-pointer"
-                    >
-                      <td className="py-2.5 px-3">
-                        <Link href={`/transformers/${t.id}`} className="font-bold text-sky-700 hover:underline">
-                          {t.id}
-                        </Link>
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-700 font-sans">{t.consumerCount}</td>
-                      <td className="py-2.5 px-3 text-slate-800">
-                        {t.inputEnergyKWh.toLocaleString()} kWh
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-800">
-                        {t.consumerUsageKWh.toLocaleString()} kWh
-                      </td>
-                      <td className="py-2.5 px-3 font-bold text-slate-900">
-                        <span className={t.lossPercentage > 5 ? 'text-rose-600' : 'text-emerald-700'}>
-                          {t.lossPercentage}%
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <RiskBadge level={t.riskLevel} />
-                      </td>
-                    </tr>
-                  ))}
+                  {dts.length > 0 ? (
+                    dts.slice(0, 5).map((t) => (
+                      <tr key={t.dt_id} className="hover:bg-slate-50 transition-colors cursor-pointer">
+                        <td className="py-2.5 px-3">
+                          <Link href={`/transformers/${t.dt_id}`} className="font-bold text-sky-700 hover:underline">
+                            {t.dt_id}
+                          </Link>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-700 font-sans">
+                          {t.total_count} / <span className="text-rose-600 font-bold">{t.flagged_count}</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-800 font-bold">
+                          {t.dt_suspicion ? (t.dt_suspicion * 100).toFixed(1) + '%' : '0.0%'}
+                        </td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900">
+                          <span className={(t.dt_loss_ratio ?? 0) > 0.1 ? 'text-rose-600' : 'text-emerald-700'}>
+                            {t.dt_loss_ratio ? (t.dt_loss_ratio * 100).toFixed(1) + '%' : '0.0%'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <RiskBadge level={t.dt_priority === 'P1' ? 'High' : t.dt_priority === 'P2' ? 'Medium' : 'Low'} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    mockTransformers.map((t) => (
+                      <tr key={t.id} className="hover:bg-slate-50 transition-colors cursor-pointer">
+                        <td className="py-2.5 px-3">
+                          <Link href={`/transformers/${t.id}`} className="font-bold text-sky-700 hover:underline">
+                            {t.id}
+                          </Link>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-700 font-sans">{t.consumerCount}</td>
+                        <td className="py-2.5 px-3 text-slate-800">{t.inputEnergyKWh.toLocaleString()} kWh</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900">
+                          <span className={t.lossPercentage > 5 ? 'text-rose-600' : 'text-emerald-700'}>
+                            {t.lossPercentage}%
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <RiskBadge level={t.riskLevel} />
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -197,10 +273,10 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">
-                  Priority Investigations
+                  Priority Consumer Anomaly Investigations
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Consumers flagged by XGBoost model for urgent field inspection
+                  Consumers flagged by Python ML backend for urgent inspection
                 </p>
               </div>
               <Link
@@ -216,48 +292,71 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500 font-sans font-semibold uppercase text-[10px] tracking-wider">
                     <th className="py-2.5 px-3">Priority</th>
-                    <th className="py-2.5 px-3">Consumer</th>
-                    <th className="py-2.5 px-3">DT</th>
-                    <th className="py-2.5 px-3">Risk Score</th>
+                    <th className="py-2.5 px-3">Consumer ID</th>
+                    <th className="py-2.5 px-3">DT ID</th>
+                    <th className="py-2.5 px-3">XGB Score</th>
                     <th className="py-2.5 px-3">Probable Cause</th>
-                    <th className="py-2.5 px-3">Confidence</th>
                     <th className="py-2.5 px-3">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {investigationCases.slice(0, 4).map((c) => (
-                    <tr
-                      key={c.id}
-                      className="hover:bg-slate-50 transition-colors"
-                    >
-                      <td className="py-2.5 px-3">
-                        <RiskBadge level={c.priority} />
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <Link href={`/consumers/${c.consumerId}`} className="font-bold text-sky-700 hover:underline">
-                          {c.consumerId}
-                        </Link>
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-600">{c.transformerId}</td>
-                      <td className="py-2.5 px-3 font-bold text-slate-900">
-                        {c.riskScore}
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-800 font-sans font-semibold">
-                        {c.probableCause}
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-600">
-                        {c.confidencePct}%
-                      </td>
-                      <td className="py-2.5 px-3">
-                        <Link
-                          href={`/consumers/${c.consumerId}`}
-                          className="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-sm text-[11px] font-mono font-bold transition-colors"
-                        >
-                          Inspect
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {consumers.length > 0 ? (
+                    consumers.slice(0, 5).map((c) => (
+                      <tr key={c.CONS_NO} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <RiskBadge level={c.risk_level} />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Link href={`/consumers/${c.CONS_NO}`} className="font-bold text-sky-700 hover:underline">
+                            {c.CONS_NO}
+                          </Link>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600">{c.dt_id || 'N/A'}</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900">
+                          {(c.xgb_score * 100).toFixed(1)}%
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-800 font-sans font-semibold">
+                          {c.probable_cause || 'Pattern Anomaly'}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Link
+                            href={`/consumers/${c.CONS_NO}`}
+                            className="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-sm text-[11px] font-mono font-bold transition-colors"
+                          >
+                            Inspect
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    mockCases.slice(0, 4).map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <RiskBadge level={c.priority} />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Link href={`/consumers/${c.consumerId}`} className="font-bold text-sky-700 hover:underline">
+                            {c.consumerId}
+                          </Link>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600">{c.transformerId}</td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900">
+                          {c.riskScore}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-800 font-sans font-semibold">
+                          {c.probableCause}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Link
+                            href={`/consumers/${c.consumerId}`}
+                            className="px-2.5 py-1 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-sm text-[11px] font-mono font-bold transition-colors"
+                          >
+                            Inspect
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

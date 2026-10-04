@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
     <div className="flex flex-col h-full bg-white text-slate-800 border-r border-slate-200 w-64 select-none font-sans">
       {/* Brand Header */}
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3 group">
           <div className="p-2 bg-sky-50 border border-sky-200 rounded-md text-sky-700">
             <Zap className="w-5 h-5 fill-sky-700 text-sky-700" />
           </div>
@@ -90,9 +90,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
             <div className="font-bold text-slate-900 tracking-tight text-base flex items-center gap-1.5 font-sans">
               GridGuard
             </div>
-            <div className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">
+            {/* <div className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">
               Utility Intelligence
-            </div>
+            </div> */}
           </div>
         </Link>
         <button
@@ -119,11 +119,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
                     key={item.name}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-md text-xs font-bold transition-all ${
-                      active
-                        ? 'bg-sky-50 text-sky-800 border border-sky-200 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
+                    className={`flex items-center justify-between px-3 py-2 rounded-md text-xs font-bold transition-all ${active
+                      ? 'bg-sky-50 text-sky-800 border border-sky-200 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <Icon className={`w-4 h-4 ${active ? 'text-sky-700' : 'text-slate-400'}`} />
@@ -132,11 +131,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
 
                     {item.badge && (
                       <span
-                        className={`px-2 py-0.5 rounded-sm text-[10px] font-mono font-bold ${
-                          active
-                            ? 'bg-sky-700 text-white'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200'
-                        }`}
+                        className={`px-2 py-0.5 rounded-sm text-[10px] font-mono font-bold ${active
+                          ? 'bg-sky-700 text-white'
+                          : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}
                       >
                         {item.badge}
                       </span>
