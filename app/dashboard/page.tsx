@@ -30,7 +30,7 @@ export default function DashboardPage() {
   const [consumers, setConsumers] = useState<ConsumerScore[]>([]);
   const [dts, setDts] = useState<DTScore[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [lastUpdated, setLastUpdated] = useState<string>('Connecting to Python backend...');
+  const [lastUpdated, setLastUpdated] = useState<string>('Fetching data...');
 
   const loadData = async () => {
     setLoading(true);
@@ -70,9 +70,18 @@ export default function DashboardPage() {
   const totalTransformers = summary?.dts?.total ?? mockTransformers.length;
 
   // Calculate average loss from DTs if available
-  const avgLoss = dts.length > 0
-    ? (dts.reduce((acc, curr) => acc + (curr.dt_loss_ratio ?? 0), 0) / dts.length * 100).toFixed(1) + '%'
-    : 'NAN 6.8%';
+  const avgLoss =
+    dts.length > 0
+      ? (
+        (1 -
+          1 /
+          (dts.reduce(
+            (acc, curr) => acc + (curr.dt_loss_ratio ?? 1),
+            0
+          ) / dts.length)) *
+        100
+      ).toFixed(1) + '%'
+      : 'N/A';
 
   return (
     <DashboardLayout>
@@ -152,9 +161,9 @@ export default function DashboardPage() {
           title="Unexplained Loss"
           value={avgLoss}
           subtitle="Estimated loss"
-          trend="↑ Live calculation"
-          trendDirection="up"
-          trendColor="danger"
+          // trend="↑ Live calculation"
+          // trendDirection="up"
+          // trendColor="danger"
           icon={TrendingUp}
           iconBg="bg-purple-50 text-purple-700 border border-purple-200"
         />
@@ -176,8 +185,8 @@ export default function DashboardPage() {
 
       {/* Risk Overview (Two Column Section) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <RiskDistributionChart />
-        <ProbableCausesChart />
+        <RiskDistributionChart distribution={summary?.consumers?.risk_distribution} />
+        <ProbableCausesChart distribution={summary?.consumers?.cause_distribution} />
       </div>
 
       {/* Network Consumption Trend Line Chart */}

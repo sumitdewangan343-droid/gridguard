@@ -147,36 +147,36 @@ export const ElectricalFeederHierarchyVisualizer: React.FC<FeederVisualizerProps
         </div>
       </div>
 
-      {/* Main Root Node Card: Feeder F001 (Clean High-Density Enterprise Utility Header) */}
-      <div className="relative bg-slate-900 text-white rounded-md p-5 shadow-xs overflow-hidden border border-slate-800">
+      {/* Main Root Node Card: Feeder F001 (Clean High-Density Enterprise Light Utility Header) */}
+      <div className="relative bg-gradient-to-r from-sky-50/60 via-slate-50 to-white text-slate-900 rounded-md p-5 shadow-2xs overflow-hidden border border-slate-200">
         {/* Vector Background Graphic */}
         <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none pr-6 flex items-center">
-          <TransmissionTowerIcon className="w-44 h-44 text-white" />
+          <TransmissionTowerIcon className="w-44 h-44 text-sky-900" />
         </div>
 
         <div className="relative z-10 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-slate-800 border border-slate-700 rounded-md text-sky-400">
+              <div className="p-2.5 bg-white border border-sky-200 rounded-md text-sky-700 shadow-2xs">
                 <TransmissionTowerIcon className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-[11px] font-mono font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                <div className="text-[11px] font-mono font-bold text-sky-700 uppercase tracking-wider flex items-center gap-2">
                   <span>Primary Feeder F001</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 </div>
-                <h3 className="text-base font-bold text-white tracking-tight">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
                   Substation Alpha (132/11 kV Grid)
                 </h3>
               </div>
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto font-mono text-xs">
-              <span className="px-2.5 py-1 bg-slate-800 text-sky-300 border border-slate-700 rounded-md font-bold">
+              <span className="px-2.5 py-1 bg-white text-sky-800 border border-slate-200 rounded-md font-bold shadow-2xs">
                 11.0 kV Busbar
               </span>
-              <span className="px-2.5 py-1 bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 rounded-md font-bold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Nominal Voltage
               </span>
             </div>
@@ -184,40 +184,40 @@ export const ElectricalFeederHierarchyVisualizer: React.FC<FeederVisualizerProps
 
           {/* Technical Specifications Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-mono">
-            <div className="p-2.5 bg-slate-800/80 border border-slate-700/80 rounded-md">
-              <span className="text-[10px] font-sans uppercase text-slate-400 font-semibold block">Connected Load</span>
-              <div className="text-sm font-bold text-white mt-0.5">{feederF001.currentLoadKW} kW</div>
-              <span className="text-[10px] text-sky-400 font-sans mt-0.5 block">84.5% Rating</span>
+            <div className="p-2.5 bg-white border border-slate-200 rounded-md shadow-2xs">
+              <span className="text-[10px] font-sans uppercase text-slate-500 font-semibold block">Connected Load</span>
+              <div className="text-sm font-bold text-slate-900 mt-0.5">{feederF001.currentLoadKW} kW</div>
+              <span className="text-[10px] text-sky-700 font-sans font-medium mt-0.5 block">84.5% Rating</span>
             </div>
 
-            <div className="p-2.5 bg-slate-800/80 border border-slate-700/80 rounded-md">
-              <span className="text-[10px] font-sans uppercase text-slate-400 font-semibold block">Delivered Energy</span>
-              <div className="text-sm font-bold text-white mt-0.5">{feederF001.totalEnergyKWh.toLocaleString()} kWh</div>
-              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">Bulk Feeder Meter</span>
+            <div className="p-2.5 bg-white border border-slate-200 rounded-md shadow-2xs">
+              <span className="text-[10px] font-sans uppercase text-slate-500 font-semibold block">Delivered Energy</span>
+              <div className="text-sm font-bold text-slate-900 mt-0.5">{feederF001.totalEnergyKWh.toLocaleString()} kWh</div>
+              <span className="text-[10px] text-slate-500 font-sans font-medium mt-0.5 block">Bulk Feeder Meter</span>
             </div>
 
-            <div className="p-2.5 bg-slate-800/80 border border-slate-700/80 rounded-md">
-              <span className="text-[10px] font-sans uppercase text-slate-400 font-semibold block">Connected DTs</span>
-              <div className="text-sm font-bold text-white mt-0.5">{feederF001.totalTransformers} Nodes</div>
-              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">3 x 100 kVA Units</span>
+            <div className="p-2.5 bg-white border border-slate-200 rounded-md shadow-2xs">
+              <span className="text-[10px] font-sans uppercase text-slate-500 font-semibold block">Connected DTs</span>
+              <div className="text-sm font-bold text-slate-900 mt-0.5">{feederF001.totalTransformers} Nodes</div>
+              <span className="text-[10px] text-slate-500 font-sans font-medium mt-0.5 block">3 x 100 kVA Units</span>
             </div>
 
-            <div className="p-2.5 bg-slate-800/80 border border-slate-700/80 rounded-md">
-              <span className="text-[10px] font-sans uppercase text-slate-400 font-semibold block">Monitored Users</span>
-              <div className="text-sm font-bold text-white mt-0.5">{feederF001.totalConsumers} Endpoints</div>
-              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">50 Users / DT</span>
+            <div className="p-2.5 bg-white border border-slate-200 rounded-md shadow-2xs">
+              <span className="text-[10px] font-sans uppercase text-slate-500 font-semibold block">Monitored Users</span>
+              <div className="text-sm font-bold text-slate-900 mt-0.5">{feederF001.totalConsumers} Endpoints</div>
+              <span className="text-[10px] text-slate-500 font-sans font-medium mt-0.5 block">50 Users / DT</span>
             </div>
 
-            <div className="p-2.5 bg-slate-800/80 border border-slate-700/80 rounded-md">
-              <span className="text-[10px] font-sans uppercase text-slate-400 font-semibold block">Technical Loss</span>
-              <div className="text-sm font-bold text-emerald-400 mt-0.5">{feederF001.totalLossPercentage}%</div>
-              <span className="text-[10px] text-slate-400 font-sans mt-0.5 block">Impedance Loss</span>
+            <div className="p-2.5 bg-white border border-slate-200 rounded-md shadow-2xs">
+              <span className="text-[10px] font-sans uppercase text-slate-500 font-semibold block">Technical Loss</span>
+              <div className="text-sm font-bold text-emerald-700 mt-0.5">{feederF001.totalLossPercentage}%</div>
+              <span className="text-[10px] text-slate-500 font-sans font-medium mt-0.5 block">Impedance Loss</span>
             </div>
 
-            <div className="p-2.5 bg-rose-950/60 border border-rose-800/80 rounded-md">
-              <span className="text-[10px] font-sans uppercase text-rose-300 font-semibold block">Unexplained Loss</span>
-              <div className="text-sm font-bold text-rose-400 mt-0.5">{feederF001.unexplainedLossPercentage}%</div>
-              <span className="text-[10px] text-rose-300 font-sans mt-0.5 block">Unaccounted Delta</span>
+            <div className="p-2.5 bg-rose-50/80 border border-rose-200 rounded-md shadow-2xs">
+              <span className="text-[10px] font-sans uppercase text-rose-700 font-semibold block">Unexplained Loss</span>
+              <div className="text-sm font-bold text-rose-600 mt-0.5">{feederF001.unexplainedLossPercentage}%</div>
+              <span className="text-[10px] text-rose-700 font-sans font-medium mt-0.5 block">Unaccounted Delta</span>
             </div>
           </div>
         </div>

@@ -1,15 +1,55 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { fetchSummary } from '@/lib/api';
 
-export const RiskDistributionChart: React.FC = () => {
-  const data = [
-    { name: 'Low Risk', value: 114, color: '#10b981' },
-    { name: 'Medium Risk', value: 24, color: '#f59e0b' },
-    { name: 'High Risk', value: 9, color: '#f97316' },
-    { name: 'Critical Risk', value: 3, color: '#f43f5e' },
-  ];
+interface RiskDistributionChartProps {
+  distribution?: Record<string, number>;
+}
+
+const DEFAULT_RISK_DIST: Record<string, number> = {
+  'Low': 114,
+  'Medium': 24,
+  'High': 9,
+  'Critical': 3,
+};
+
+const RISK_COLORS: Record<string, string> = {
+  'Normal': '#10b981',
+  'Low': '#0284c7',
+  'Medium': '#f59e0b',
+  'High': '#f97316',
+  'Critical': '#f43f5e',
+};
+
+export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ distribution: propDist }) => {
+  const [dist, setDist] = useState<Record<string, number>>(propDist || DEFAULT_RISK_DIST);
+
+  useEffect(() => {
+    if (propDist) {
+      setDist(propDist);
+      return;
+    }
+
+    fetchSummary()
+      .then((res) => {
+        if (res?.consumers?.risk_distribution && Object.keys(res.consumers.risk_distribution).length > 0) {
+          setDist(res.consumers.risk_distribution);
+        }
+      })
+      .catch((err) => {
+        console.warn('RiskDistributionChart: failed to fetch live summary, using fallback:', err);
+      });
+  }, [propDist]);
+
+  const data = Object.entries(dist)
+    .filter(([_, value]) => value > 0)
+    .map(([name, value]) => ({
+      name: `${name} Risk`,
+      value,
+      color: RISK_COLORS[name] || '#64748b',
+    }));
 
   const total = data.reduce((acc, curr) => acc + curr.value, 0);
 
@@ -20,7 +60,7 @@ export const RiskDistributionChart: React.FC = () => {
           Risk Distribution
         </h3>
         <p className="text-xs text-slate-500">
-          Consumer risk level classification (150 total)
+          Consumer risk level classification ({total} total monitored)
         </p>
       </div>
 
